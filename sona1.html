@@ -1,0 +1,1249 @@
+<html>
+<head>
+  <title>Sona</Title>
+
+    <style>
+    * {
+  padding: 0;
+  margin: 0;
+}
+
+div {
+  padding: 2em 5em;
+}
+
+header {
+  text-align:center;
+  background-color: lightgrey;
+}
+
+.navigation {
+  display: inline-block;
+  padding: 1em;
+  background-color: darkgrey;
+  width: 100%;
+}
+
+.navigation a {
+  padding: 0.5em;
+}
+
+.rateUser button {
+	border-radius: 50px;
+	padding: 5px;
+	margin: 5px;
+}
+	</style>
+
+<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+<script src="instascan.min.js"></script>
+
+	
+	<script>
+
+
+
+		var abi = [
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "allProfiles",
+		"outputs": [
+			{
+				"name": "userName",
+				"type": "string"
+			},
+			{
+				"name": "bio",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "name",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_spender",
+				"type": "address"
+			},
+			{
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "approve",
+		"outputs": [
+			{
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "terminate",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"name": "_ratingContent",
+				"type": "string"
+			}
+		],
+		"name": "rateUserScoreOf3",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "banUser",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "removeAdmin",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "totalSupply",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "addDeveloper",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_from",
+				"type": "address"
+			},
+			{
+				"name": "_to",
+				"type": "address"
+			},
+			{
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "transferFrom",
+		"outputs": [
+			{
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "allAdmin",
+		"outputs": [
+			{
+				"name": "isAdmin",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "decimals",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"name": "_ratingContent",
+				"type": "string"
+			}
+		],
+		"name": "rateUserScoreOf4",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawEther",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userName",
+				"type": "string"
+			},
+			{
+				"name": "_bio",
+				"type": "string"
+			}
+		],
+		"name": "updateUserProfile",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "burn",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "getUserRating",
+		"outputs": [
+			{
+				"name": "result",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "isDeveloper",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "addAdmin",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "target",
+				"type": "address"
+			},
+			{
+				"name": "mintedAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "mintToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_from",
+				"type": "address"
+			},
+			{
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "burnFrom",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "collectTokens",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getMyRating",
+		"outputs": [
+			{
+				"name": "result",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_price",
+				"type": "uint256"
+			}
+		],
+		"name": "setPrice",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"name": "_ratingContent",
+				"type": "string"
+			}
+		],
+		"name": "rateUserScoreOf2",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "symbol",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"name": "_ratingContent",
+				"type": "string"
+			}
+		],
+		"name": "rateUserScoreOf0",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "removeDeveloper",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_post",
+				"type": "string"
+			}
+		],
+		"name": "addPost",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_to",
+				"type": "address"
+			},
+			{
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "frozenAccount",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "totalUsers",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"name": "_ratingContent",
+				"type": "string"
+			}
+		],
+		"name": "rateUserScoreOf5",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_spender",
+				"type": "address"
+			},
+			{
+				"name": "_value",
+				"type": "uint256"
+			},
+			{
+				"name": "_extraData",
+				"type": "bytes"
+			}
+		],
+		"name": "approveAndCall",
+		"outputs": [
+			{
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "buy",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			},
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "allowance",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "buySona",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "target",
+				"type": "address"
+			},
+			{
+				"name": "freeze",
+				"type": "bool"
+			}
+		],
+		"name": "freezeAccount",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "ratingContents",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "allUsers",
+		"outputs": [
+			{
+				"name": "currentRating",
+				"type": "uint256"
+			},
+			{
+				"name": "userStartTime",
+				"type": "uint256"
+			},
+			{
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"name": "isUser",
+				"type": "bool"
+			},
+			{
+				"name": "isBanned",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getSonaBalance",
+		"outputs": [
+			{
+				"name": "result",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "becomeUser",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"name": "_ratingContent",
+				"type": "string"
+			}
+		],
+		"name": "rateUserScoreOf1",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "userAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "rating",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "rater",
+				"type": "address"
+			}
+		],
+		"name": "UserIsRated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "userAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "rating",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "balance",
+				"type": "uint256"
+			}
+		],
+		"name": "TokensCollected",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "NewUser",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "target",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "frozen",
+				"type": "bool"
+			}
+		],
+		"name": "FrozenFunds",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "Transfer",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "Burn",
+		"type": "event"
+	}
+]
+
+</script>
+
+</head>
+
+
+
+
+<body>
+  <header>
+    <h1>SONA</h1>
+  </header>
+  <nav class="navigation">
+    <a href="#balance">balance</a>
+    <a href="#">current rating</a>
+    <a href="#">my QR code</a>
+    <a href="#">scan QR code</a>
+  </nav>
+
+  <div id="balance">
+    <hr>
+	<h2>balance</h2>
+	<label>SNA:</label>
+    <p id="snabalance">SNA: </p>
+  </div>
+
+  <div>
+	<h2>
+		Transfer Sona
+	</h2>
+
+	<label>address:</label>
+	<input id="transID" type="text">
+	<label>amount:</label>
+	<input id="transfer-amount" type="number">
+	<button onclick="transferSona()">Send Sona</button>
+  </div>
+
+  <div>
+    <hr>
+    <h2>current rating</h2>
+    <p id="current-rating">Sona rating: </p>
+  </div>
+
+  <div id="show-my-qr-code">
+    <hr>
+	<h2>My Sona Code</h2>
+	<img id="qrCode">
+	
+    <h3>share my QR code</h3>
+  </div>
+
+  <div id="scan-qr-code">
+    <hr>
+	<h2>scan QR code</h2>
+	<video id="preview"></video>
+    <script type="text/javascript">
+      let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
+      scanner.addListener('scan', function (content) {
+        console.log(content);
+      });
+      Instascan.Camera.getCameras().then(function (cameras) {
+        if (cameras.length > 0) {
+          scanner.start(cameras[0]);
+		  let result = scanner.scan()
+		  document.getElementById('rateID').innerHTML = result.content;
+        } else {
+          console.error('No cameras found.');
+        }
+      }).catch(function (e) {
+        console.error(e);
+      });
+    </script>
+  </div>
+
+
+  <div class="rateUser">
+	  <h2>rate user</h2>
+	  <label>enter user address: </label>
+	  <input id="rateID" type="text">
+	  <br>
+	  <label>comment:</label>
+	  <input id="comment" type="text">
+	  <br>
+	  <button onclick="rateUser0()">0</button>
+	  <button onclick="rateUser1()">1</button>
+	  <button onclick="rateUser2()">2</button>
+	  <button onclick="rateUser3()">3</button>
+	  <button onclick="rateUser4()">4</button>
+	  <button onclick="rateUser5()">5</button>
+	  <br>
+	  
+  </div>
+
+  <div id="collect-tokens">
+	<hr>
+	<p> collect the coins you earned!</p>
+	<h2>collect tokens</h2>
+	<button onclick="collect()">Collect Your Sona!</button>
+    <h3>your deadline</h3>
+  </div>
+
+  <div>
+	  <h2>Create a Personal Post</h2>
+	  <input id="postText" type="text">
+	  <button onclick="newPost()">Submit Post</button>
+  </div>
+
+  <hr>
+
+  <div>
+	  <h2>become a user</h2>
+
+	  <button onclick="becomeSonaUser()">I want to be a user</button>
+	  <p id="becomeUser"></p>
+  </div>
+
+  <div id="buySONA">
+    <hr>
+	<h2>Buy Sona Tokens</h2>
+	<input id="buyAmount"type="text">
+	<button onclick="buySona()">Buy Sona</button>
+
+    <script>
+
+	
+		
+
+			// Checking if Web3 has been injected by the browser (Mist/MetaMask)
+		if (typeof Web3 !== 'undefined') {
+			// Use Mist/MetaMask's provider
+			web3 = new Web3(web3.currentProvider);
+		} else {
+			console.log('No web3? You should consider trying MetaMask!')
+			// fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
+			web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+		}
+
+
+		var sonaContract = web3.eth.contract(abi);
+
+		var sona = sonaContract.at('0xb3dcbcac9639d0daf5453c0e5ef687ac25e06307');
+
+		console.log(sona);
+
+		web3.eth.defaultAccount = web3.eth.accounts[0];
+
+		sona.getSonaBalance(function(error, result){
+				if(!error)
+					{
+						result = result /1000000000000000000;
+						document.getElementById('snabalance').innerHTML = result;
+					}
+				else
+					console.error(error);
+			});
+			
+
+
+		sona.getMyRating(function (result, error){
+			if(!error){
+				console.log(result);
+				document.getElementById('current-rating').innerHTML = result;
+			}
+		});
+
+
+
+
+
+
+
+
+			function becomeSonaUser() {
+
+				sona.becomeUser( function (result, error){
+					if (!error){
+						console.log(result);
+					} else {
+						console.error(error);
+					}
+				});
+				
+			}
+
+
+
+			function rateUser0(){
+				var address = document.getElementById('rateID').innerText;
+				var comment = document.getElementById('comment').innerText; 
+				sona.rateUserScoreOf0(address, comment, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+			}
+		
+			function rateUser1(address){
+
+				var address = document.getElementById('rateID').innerText;
+				var comment = document.getElementById('comment').innerText; 
+				sona.rateUserScoreOf1(address, comment, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+
+			}
+
+			function rateUser2(){
+
+				var address = document.getElementById('rateID').innerText;
+				var comment = document.getElementById('comment').innerText; 
+				sona.rateUserScoreOf2(address, comment, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+
+			}
+
+			function rateUser3() {
+
+				var address = document.getElementById('rateID').innerText;
+				var comment = document.getElementById('comment').innerText; 
+				sona.rateUserScoreOf3(address, comment, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+
+			}
+
+
+			function rateUser4 () {
+				var address = document.getElementById('rateID').innerText;
+				var comment = document.getElementById('comment').innerText; 
+				sona.rateUserScoreOf4(address, comment, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+
+			}
+
+			function rateUser5 () {
+				
+				var address = document.getElementById('rateID').innerText;
+				var comment = document.getElementById('comment').innerText; 
+				sona.rateUserScoreOf5(address, comment, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+
+			}
+
+
+
+			function transferSona () {
+
+				var toAddress = document.getElementById('transID').innerText;
+				var amount = document.getElementById('transfer-amount').innerText;
+				sona.transfer(toAddress, amount, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+				
+			}
+
+
+			function buySona() {
+				var amount = document.getElementById('buyAmount').innerText;
+				amount = parseInt(amount);
+				sona.buy(amount, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+
+				});
+
+			}
+
+			function collect() {
+				sona.collectTokens(function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				})
+			}
+
+
+
+			function showMyQR(){
+				var qrImage =  "https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=" + web3.eth.defaultAccount + "&choe=UTF-8"
+				document.getElementById('qrCode').src = qrImage;
+		
+
+			}
+
+			function scanQRCode () {
+
+			}
+
+			function newPost () {
+				var content = document.getElementById('postText').innerText;
+				sona.addPost(content, function (result, error){
+					if (!error){
+						console.log(result);
+					}
+				});
+			}
+		
+			showMyQR();
+    </script>
+
+</body>
+
+
+
+</html>
