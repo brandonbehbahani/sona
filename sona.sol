@@ -480,25 +480,6 @@ contract MinterRole {
     }
 }
 
-/**
- * @dev Extension of `ERC20` that adds a set of accounts with the `MinterRole`,
- * which have permission to mint (create) new tokens as they see fit.
- *
- * At construction, the deployer of the contract is the only minter.
- */
-contract Mintable is ERC20, MinterRole {
-    /**
-     * @dev See `ERC20._mint`.
-     *
-     * Requirements:
-     *
-     * - the caller must have the `MinterRole`.
-     */
-    function mint(address account, uint256 amount) public onlyMinter returns (bool) {
-        _mint(account, amount);
-        return true;
-    }
-}
 
 contract PauserRole {
     using Roles for Roles.Role;
@@ -640,6 +621,27 @@ contract Pausable is ERC20, PausableBase {
     }
 }
 
+
+/**
+ * @dev Extension of `ERC20` that adds a set of accounts with the `MinterRole`,
+ * which have permission to mint (create) new tokens as they see fit.
+ *
+ * At construction, the deployer of the contract is the only minter.
+ */
+contract Mintable is ERC20, MinterRole {
+    /**
+     * @dev See `ERC20._mint`.
+     *
+     * Requirements:
+     *
+     * - the caller must have the `MinterRole`.
+     */
+    function mint(address account, uint256 amount) public onlyMinter returns (bool) {
+        _mint(account, amount);
+        return true;
+    }
+}
+
 /**
  * @dev Extension of `ERC20` that allows token holders to destroy both their own
  * tokens and those that they have an allowance for, in a way that can be
@@ -749,6 +751,8 @@ contract SonaCore is SonaToken {
     }
     
     mapping (address => User) public allUsers;
+    
+    mapping (address => mapping (uint256 => Vote)) public allVotes;
 
     function becomeUser(string memory _userName) public {
         User memory u = allUsers[msg.sender];
@@ -761,8 +765,10 @@ contract SonaCore is SonaToken {
     function upVoteUser(address _userAddress, uint256 _value, string memory _info) public {
         User memory u = allUsers[_userAddress];
         require(u.isUser == true && u.isUser == true);
-        totalPosVotes - u.score;
-        u.upVotes.add(_value);
+        require(_userAddress != msg.sender);
+        totalPosVotes.sub(u.score);
+        u.numVotes.add(1); 
+        u.upVotes.add(_value.div(1000000000000000000));
         if (u.upVotes > u.downVotes){
             u.score = u.upVotes.sub(u.downVotes);
         } else {
@@ -772,15 +778,19 @@ contract SonaCore is SonaToken {
         v.voteType = VoteType.UPVOTE;
         v.value = _value;
         v.info = _info;
-        totalPosVotes + u.score;
+        v.rater = msg.sender;
+        totalPosVotes.add(u.score);
         allUsers[_userAddress] = u;
+        allVotes[_userAddress][u.numVotes] = v;
     }
     
-    function downVoteUser (address _userAddress, uint256 _communityId, uint256 _value) public {
+    function downVoteUser (address _userAddress, uint256 _value, string memory _info) public {
         User memory u = allUsers[_userAddress];
         require(u.isUser == true && u.isUser == true);
+        require(_userAddress != msg.sender);
         totalPosVotes.sub(u.score);
-        u.upVotes.add(_value);
+        u.numVotes.add(1);
+        u.downVotes.add(_value.div(1000000000000000000));
         if (u.upVotes > u.downVotes){
             u.score = u.upVotes.sub(u.downVotes);
         } else {
@@ -790,16 +800,19 @@ contract SonaCore is SonaToken {
         v.voteType = VoteType.DOWNVOTE;
         v.value = _value;
         v.info = _info;
+        v.rater = msg.sender;
         totalPosVotes.add(u.score);
         allUsers[_userAddress] = u;
+        allVotes[_userAddress][u.numVotes] = v;
     }
     
-    function collectDividends() public {
+    function collectReward() public {
         User memory u = allUsers[msg.sender];
+        require(u.isUser == true);
         require(u.upVotes > u.downVotes);
         uint256 userRating = u.upVotes.sub(u.downVotes);
-        uint256 balancePerPoint = balanceOf(address(this))/totalPosVotes;
-        uint256 balanceOwed = balancePerPoint * userRating;
+        uint256 balancePerPoint = balanceOf(address(this)).div(totalPosVotes);
+        uint256 balanceOwed = balancePerPoint.mul(userRating);
         _transfer(address(this), msg.sender, balanceOwed);
     }
     
