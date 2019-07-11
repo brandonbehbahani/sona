@@ -1,6 +1,16 @@
 pragma solidity 0.5.0;
 
 /**
+ * SONA
+ *
+ 
+ *
+ * This smart contract is a DAO or a "decentralized autonoums organization"
+ * 
+ */
+
+
+/**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
  * checks.
  *
@@ -440,6 +450,47 @@ contract ERC20 is IERC20 {
     }
 }
 
+contract AdminRole {
+    using Roles for Roles.Role;
+
+    event AdminAdded(address indexed account);
+    event AdminRemoved(address indexed account);
+
+    Roles.Role private _admins;
+
+    constructor () internal {
+        _addAdmin(msg.sender);
+    }
+
+    modifier onlyAdmin() {
+        require(isAdmin(msg.sender), "AdminRole: caller does not have the Admin role");
+        _;
+    }
+
+    function isAdmin(address account) public view returns (bool) {
+        return _admins.has(account);
+    }
+
+    function addAdmin(address account) public onlyAdmin {
+        _addAdmin(account);
+    }
+
+    function renounceAdmin() public {
+        _removeAdmin(msg.sender);
+    }
+
+    function _addAdmin(address account) internal {
+        _admins.add(account);
+        emit AdminAdded(account);
+    }
+
+    function _removeAdmin(address account) internal {
+        _admins.remove(account);
+        emit AdminRemoved(account);
+    }
+}
+
+
 contract MinterRole {
     using Roles for Roles.Role;
 
@@ -728,15 +779,34 @@ contract SonaToken is Pausable, Mintable, Burnable, Detailed {
     }
 }
 
-contract SonaCore is SonaToken {
+/**
+ * @title SonaCore
+ *
+ 
+ *
+ * This is the core smart contract.
+ * Other functionality and upgrades will be built around this smart contract.
+ * 
+ */
+contract SonaCore is SonaToken, AdminRole {
     
-    uint256 totalPosVotes;
+    using SafeMath for uint256;
     
-    enum VoteType {UPVOTE, DOWNVOTE}
+    uint256 private totalPosVotes_;
+    
+    uint256 private interval_;
+    
+    uint256 private divisor_;
+    
+    uint256 private price_;
+    
+    enum VoteType {DEFAULT, UPVOTE, DOWNVOTE}
     
     struct User {
         bool isUser;
         string name;
+        string desc;
+        uint256 deadLine;
         uint256 numVotes;
         uint256 upVotes;
         uint256 downVotes;
@@ -750,25 +820,59 @@ contract SonaCore is SonaToken {
         address rater;
     }
     
-    mapping (address => User) public allUsers;
+    event Rated(address account, string info, VoteType vt, uint256 value);
     
-    mapping (address => mapping (uint256 => Vote)) public allVotes;
+    event NewPersona(address account, string name, string desc);
+    
+    event RewardCollected(address account, string name, uint256 amount);
+    
+    mapping (address => User) private _allUsers;
+    
+    mapping (address => mapping (uint256 => Vote)) private _allVotes;
+    
+    /////////////////////////admin functions/////////////////////////////////////////
+    function setInterval(uint256 _interval) public onlyAdmin {
+        interval_ = _interval;
+    }
+    
+    function setDivisor(uint256 _divisor) public onlyAdmin {
+        divisor_ = _divisor;
+    }
+    
+    function setPrice(uint256 _price) public onlyAdmin {
+        price_ = _price;
+    }
+    
+    /////////////////////////core functions///////////////////////////////////////////
 
-    function becomeUser(string memory _userName) public {
-        User memory u = allUsers[msg.sender];
+    function BecomePersona(string memory _userName, string memory _userDesc) public {
+        User memory u = _allUsers[msg.sender];
         require(u.isUser == false);
         u.isUser = true;
         u.name = _userName;
-        allUsers[msg.sender] = u;
+        u.desc = _userDesc;
+        u.deadLine = now.add(interval_);
+        _allUsers[msg.sender] = u;
+        emit NewPersona(msg.sender, _userName, _userDesc);
     }
     
-    function upVoteUser(address _userAddress, uint256 _value, string memory _info) public {
-        User memory u = allUsers[_userAddress];
-        require(u.isUser == true && u.isUser == true);
-        require(_userAddress != msg.sender);
-        totalPosVotes.sub(u.score);
-        u.numVotes.add(1); 
-        u.upVotes.add(_value.div(1000000000000000000));
+    modifier onlyUser() {
+        require(_allUsers[msg.sender].isUser, "SonaCore: caller does not have the User role");
+        _;
+    }
+    
+    function setUserDescription (string memory _userDesc) public onlyUser {
+        _allUsers[msg.sender].desc = _userDesc; 
+    }
+    
+    function upVoteUser(address _userAddress, uint256 _value, string memory _info) public onlyUser{
+        User memory u = _allUsers[_userAddress];
+        require(u.isUser == true, "SonaCore: user address is invalid");
+        require(_userAddress != msg.sender, "SonaCore: user address is invalid");
+        totalPosVotes_ = totalPosVotes_.sub(u.score);
+        u.numVotes = u.numVotes.add(1);
+        uint256 voteVal = _value.div(price_);
+        u.upVotes = u.upVotes.add(voteVal);
         if (u.upVotes > u.downVotes){
             u.score = u.upVotes.sub(u.downVotes);
         } else {
@@ -776,21 +880,24 @@ contract SonaCore is SonaToken {
         }
         Vote memory v;
         v.voteType = VoteType.UPVOTE;
-        v.value = _value;
+        v.value = voteVal;
         v.info = _info;
         v.rater = msg.sender;
-        totalPosVotes.add(u.score);
-        allUsers[_userAddress] = u;
-        allVotes[_userAddress][u.numVotes] = v;
+        totalPosVotes_ = totalPosVotes_.add(u.score);
+        _transfer(msg.sender, address(this), _value);
+        _allUsers[_userAddress] = u;
+        _allVotes[_userAddress][u.numVotes] = v;
+        emit Rated(_userAddress, _info, VoteType.UPVOTE, voteVal);
     }
     
-    function downVoteUser (address _userAddress, uint256 _value, string memory _info) public {
-        User memory u = allUsers[_userAddress];
-        require(u.isUser == true && u.isUser == true);
-        require(_userAddress != msg.sender);
-        totalPosVotes.sub(u.score);
-        u.numVotes.add(1);
-        u.downVotes.add(_value.div(1000000000000000000));
+    function downVoteUser (address _userAddress, uint256 _value, string memory _info) public onlyUser{
+        User memory u = _allUsers[_userAddress];
+        require(u.isUser == true, "SonaCore: user address is invalid");
+        require(_userAddress != msg.sender, "SonaCore: user address is invalid");
+        totalPosVotes_ = totalPosVotes_.sub(u.score);
+        u.numVotes = u.numVotes.add(1);
+        uint256 voteVal = _value.div(price_);
+        u.downVotes = u.downVotes.add(voteVal);
         if (u.upVotes > u.downVotes){
             u.score = u.upVotes.sub(u.downVotes);
         } else {
@@ -798,22 +905,105 @@ contract SonaCore is SonaToken {
         }
         Vote memory v;
         v.voteType = VoteType.DOWNVOTE;
-        v.value = _value;
+        v.value = voteVal;
         v.info = _info;
         v.rater = msg.sender;
-        totalPosVotes.add(u.score);
-        allUsers[_userAddress] = u;
-        allVotes[_userAddress][u.numVotes] = v;
+        totalPosVotes_ = totalPosVotes_.add(u.score);
+        _transfer(msg.sender, address(this), _value);
+        _allUsers[_userAddress] = u;
+        _allVotes[_userAddress][u.numVotes] = v;
+        emit Rated(_userAddress, _info, VoteType.DOWNVOTE, voteVal);
     }
     
-    function collectReward() public {
-        User memory u = allUsers[msg.sender];
-        require(u.isUser == true);
+    function collectReward() public onlyUser {
+        User memory u = _allUsers[msg.sender];
+        require(u.deadLine < now); 
         require(u.upVotes > u.downVotes);
-        uint256 userRating = u.upVotes.sub(u.downVotes);
-        uint256 balancePerPoint = balanceOf(address(this)).div(totalPosVotes);
-        uint256 balanceOwed = balancePerPoint.mul(userRating);
+        uint256 balancePerPoint = balanceOf(address(this)).div(totalPosVotes_);
+        uint256 balanceOwed = balancePerPoint.mul(u.score).div(divisor_);
         _transfer(address(this), msg.sender, balanceOwed);
+        u.deadLine = u.deadLine.add(interval_);
+        _allUsers[msg.sender] = u; 
+        emit RewardCollected(msg.sender, u.name, balanceOwed); 
+    }
+   
+    constructor() public {
+        interval_ = 100; // intentionally short interval for testing pusposes
+        divisor_ = 100;
+        price_ = 1000000000000000000;
     }
     
+    //////////////////////////////// getters ////////////////////////////////
+    
+    
+    function getUserName(address account) public view returns (string memory){
+        return _allUsers[account].name;
+    }
+    
+    function getUserDescription(address account) public view returns (string memory){
+        return _allUsers[account].desc;
+    }
+    
+    function getTimeTillDeadline() public view returns (uint256) {
+        User memory u = _allUsers[msg.sender];
+        if (u.deadLine > now){
+            return u.deadLine.sub(now);
+        } else {
+            return 0;
+        }
+    }
+    
+    function getUserScore(address account) public view returns (uint256){
+        return _allUsers[account].score;
+    }
+    
+    function getUserNumVotes(address account) public view returns (uint256){
+        return _allUsers[account].numVotes;
+    }
+    
+    function getUserUpvotes(address account) public view returns (uint256){
+        return _allUsers[account].upVotes;
+    }
+    
+    function getUserDownVotes(address account) public view returns (uint256){
+        return _allUsers[account].downVotes;
+    }
+    
+    
+    function getVoteType(address account, uint256 _voteId) public view returns (string memory){
+        Vote memory v = _allVotes[account][_voteId];
+        if (v.voteType == VoteType.UPVOTE) {
+            return "UPVOTE";
+        } else if (v.voteType == VoteType.DOWNVOTE) {
+            return "DOWNVOTE";
+        }
+    }
+    
+    function getVoteInfo(address account, uint256 _voteId) public view returns (string memory) {
+        return _allVotes[account][_voteId].info;
+    }
+    
+    function getVoteValue(address account, uint256 _voteId) public view returns (uint256) {
+        return _allVotes[account][_voteId].value;
+    }
+    
+    function getVoteRater(address account, uint256 _voteId) public view returns (address) {
+        return _allVotes[account][_voteId].rater;
+    }
+    
+    function getTotalPosVotes () public view returns (uint256) {
+        return totalPosVotes_;
+    }
+    
+    function getInterval() public view returns (uint256){
+        return interval_;
+    }
+    
+    function getDivisor() public view returns (uint256){
+        return divisor_;
+    }
+    
+    function getPrice() public view returns (uint256){
+        return price_;
+    }
 }
