@@ -1,0 +1,30 @@
+* {
+    padding: 0;
+    margin: 0;
+  }
+  
+  div {
+    padding: 2em 5em;
+  }
+  
+  header {
+    text-align:center;
+    background-color: lightgrey;
+  }
+  
+  .navigation {
+    display: inline-block;
+    padding: 1em;
+    background-color: darkgrey;
+    width: 100%;
+  }
+  
+  .navigation a {
+    padding: 0.5em;
+  }
+  
+  .rateUser button {
+      border-radius: 50px;
+      padding: 5px;
+      margin: 5px;
+  }
