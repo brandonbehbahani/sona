@@ -1,11 +1,13 @@
 pragma solidity 0.5.0;
 
 /**
- * SONA
+ * @title: SONA: The governance and funding protocol.
  *
- 
  *
- * This smart contract is a DAO or a "decentralized autonoums organization"
+ * This smart contract is a DAO or "decentralized autonoums organization" that
+ * distributes a token reward based on rating. Ratings are democratically decided
+ * by the community using the SONA token. Much of the source code is comprised of
+ * OpenZeppelin smart contracts to ensure core token and Role functionality. 
  * 
  */
 
@@ -782,10 +784,12 @@ contract SonaToken is Pausable, Mintable, Burnable, Detailed {
 /**
  * @title SonaCore
  *
- 
+ * @author Brandon Behbahani
  *
- * This is the core smart contract.
- * Other functionality and upgrades will be built around this smart contract.
+ * @notice This is the core smart contract. Other functionality and upgrades
+ * will be built around this smart contract.
+ * @dev This contract contains mechanisms for storing rating and allocating
+ * rewards. This contract contains admin functions.
  * 
  */
 contract SonaCore is SonaToken, AdminRole {
@@ -820,6 +824,8 @@ contract SonaCore is SonaToken, AdminRole {
         address rater;
     }
     
+    ////////////////////////////////// Evnets /////////////////////////////////////////////
+    
     event Rated(address account, string info, VoteType vt, uint256 value);
     
     event NewPersona(address account, string name, string desc);
@@ -830,7 +836,8 @@ contract SonaCore is SonaToken, AdminRole {
     
     mapping (address => mapping (uint256 => Vote)) private _allVotes;
     
-    /////////////////////////admin functions/////////////////////////////////////////
+    /////////////////////////////////// admin functions /////////////////////////////////////////
+    
     function setInterval(uint256 _interval) public onlyAdmin {
         interval_ = _interval;
     }
@@ -843,7 +850,7 @@ contract SonaCore is SonaToken, AdminRole {
         price_ = _price;
     }
     
-    /////////////////////////core functions///////////////////////////////////////////
+    ///////////////////////////////////////core functions///////////////////////////////////////////
 
     function BecomePersona(string memory _userName, string memory _userDesc) public {
         User memory u = _allUsers[msg.sender];
@@ -865,6 +872,13 @@ contract SonaCore is SonaToken, AdminRole {
         _allUsers[msg.sender].desc = _userDesc; 
     }
     
+    /**
+     * @dev Collects Sona tokens for positive ratings.
+     *
+     * This is a public funtion used to give upvotes.
+     * The cost of the rating is sent to the address of this smart contract.
+     *
+     */
     function upVoteUser(address _userAddress, uint256 _value, string memory _info) public onlyUser{
         User memory u = _allUsers[_userAddress];
         require(u.isUser == true, "SonaCore: user address is invalid");
@@ -890,6 +904,13 @@ contract SonaCore is SonaToken, AdminRole {
         emit Rated(_userAddress, _info, VoteType.UPVOTE, voteVal);
     }
     
+    /**
+     * @dev Collects Sona tokens for negative ratings.
+     *
+     * This is a public funtion used to give downvotes.
+     * The cost of the rating is sent to the address of this smart contract.
+     *
+     */
     function downVoteUser (address _userAddress, uint256 _value, string memory _info) public onlyUser{
         User memory u = _allUsers[_userAddress];
         require(u.isUser == true, "SonaCore: user address is invalid");
@@ -915,10 +936,16 @@ contract SonaCore is SonaToken, AdminRole {
         emit Rated(_userAddress, _info, VoteType.DOWNVOTE, voteVal);
     }
     
+    /**
+     * @dev Distributes tokens for user when their deadLine is finished.
+     *
+     * The token rewards are determined by the user score;
+     * 
+     */
     function collectReward() public onlyUser {
         User memory u = _allUsers[msg.sender];
-        require(u.deadLine < now); 
-        require(u.upVotes > u.downVotes);
+        require(now > u.deadLine, "SonaCore: The deadline has not been reached."); 
+        require(u.score > 0, "SonaCore: positive score is required.");
         uint256 balancePerPoint = balanceOf(address(this)).div(totalPosVotes_);
         uint256 balanceOwed = balancePerPoint.mul(u.score).div(divisor_);
         _transfer(address(this), msg.sender, balanceOwed);
@@ -927,13 +954,15 @@ contract SonaCore is SonaToken, AdminRole {
         emit RewardCollected(msg.sender, u.name, balanceOwed); 
     }
    
+   //////////////////////////////// constructor //////////////////////////////////
+   
     constructor() public {
         interval_ = 100; // intentionally short interval for testing pusposes
         divisor_ = 100;
         price_ = 1000000000000000000;
     }
     
-    //////////////////////////////// getters ////////////////////////////////
+    //////////////////////////////// getters /////////////////////////////////////
     
     
     function getUserName(address account) public view returns (string memory){
@@ -968,7 +997,6 @@ contract SonaCore is SonaToken, AdminRole {
     function getUserDownVotes(address account) public view returns (uint256){
         return _allUsers[account].downVotes;
     }
-    
     
     function getVoteType(address account, uint256 _voteId) public view returns (string memory){
         Vote memory v = _allVotes[account][_voteId];
