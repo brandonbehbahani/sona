@@ -796,7 +796,7 @@ contract SonaCore is SonaToken, AdminRole {
     
     using SafeMath for uint256;
     
-    uint256 private totalPosVotes_;
+    uint256 public totalPosVotes_;
     
     uint256 private interval_;
     
@@ -832,9 +832,9 @@ contract SonaCore is SonaToken, AdminRole {
     
     event RewardCollected(address account, string name, uint256 amount);
     
-    mapping (address => User) private _allUsers;
+    mapping (address => User) public _allUsers;
     
-    mapping (address => mapping (uint256 => Vote)) private _allVotes;
+    mapping (address => mapping (uint256 => Vote)) public _allVotes;
     
     /////////////////////////////////// admin functions /////////////////////////////////////////
     
@@ -964,64 +964,6 @@ contract SonaCore is SonaToken, AdminRole {
     
     //////////////////////////////// getters /////////////////////////////////////
     
-    
-    function getUserName(address account) public view returns (string memory){
-        return _allUsers[account].name;
-    }
-    
-    function getUserDescription(address account) public view returns (string memory){
-        return _allUsers[account].desc;
-    }
-    
-    function getTimeTillDeadline() public view returns (uint256) {
-        User memory u = _allUsers[msg.sender];
-        if (u.deadLine > now){
-            return u.deadLine.sub(now);
-        } else {
-            return 0;
-        }
-    }
-    
-    function getUserScore(address account) public view returns (uint256){
-        return _allUsers[account].score;
-    }
-    
-    function getUserNumVotes(address account) public view returns (uint256){
-        return _allUsers[account].numVotes;
-    }
-    
-    function getUserUpvotes(address account) public view returns (uint256){
-        return _allUsers[account].upVotes;
-    }
-    
-    function getUserDownVotes(address account) public view returns (uint256){
-        return _allUsers[account].downVotes;
-    }
-    
-    function getVoteType(address account, uint256 _voteId) public view returns (string memory){
-        Vote memory v = _allVotes[account][_voteId];
-        if (v.voteType == VoteType.UPVOTE) {
-            return "UPVOTE";
-        } else if (v.voteType == VoteType.DOWNVOTE) {
-            return "DOWNVOTE";
-        }
-    }
-    
-    function getVoteInfo(address account, uint256 _voteId) public view returns (string memory) {
-        return _allVotes[account][_voteId].info;
-    }
-    
-    function getVoteValue(address account, uint256 _voteId) public view returns (uint256) {
-        return _allVotes[account][_voteId].value;
-    }
-    
-    function getVoteRater(address account, uint256 _voteId) public view returns (address) {
-        return _allVotes[account][_voteId].rater;
-    }
-    
-    function getTotalPosVotes () public view returns (uint256) {
-        return totalPosVotes_;
-    }
     
     function getInterval() public view returns (uint256){
         return interval_;
